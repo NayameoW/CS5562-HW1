@@ -5,7 +5,7 @@ eps_values = [2/255, 4/255, 6/255, 8/255, 10/255]
 adversarial_accuracy = [38.15, 15.05, 5.7, 2.85, 2.1]
 
 plt.figure(figsize=(10, 6))
-plt.plot(eps_values, adversarial_accuracy, 'r-o', label='Adversarial Images')
+plt.plot(eps_values, adversarial_accuracy, 'r-o', label='Accuracy on Adversarial Images')
 
 plt.title('Model accuracy on various epsilons\n Batch number 20, Batch size 100, Alpha 2/255', fontsize=16)
 plt.xlabel('Epsilon (eps)', fontsize=14)

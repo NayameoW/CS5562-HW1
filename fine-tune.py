@@ -84,30 +84,31 @@ def adversarial_train(model, train_loader, optimizer, criterion, epoch):
     for param in model.fc.parameters():
         param.requires_grad = True
 
-    for epoch in range(epoch):
-        print('Epoch: {}'.format(epoch))
-        adv_images = torch.load('results/adv_images_eps_8-255')['adv_images']
-        for batch_idx, inputs in enumerate(train_loader):
-            # print('Batch: %d Generating adversarial examples...' % batch_idx)
-            # adv_images = pgd_attacker.pgd_attack(**inputs)
-            
-            start_id = batch_idx * BATCH_SIZE
-            end_id = (batch_idx + 1) * BATCH_SIZE
-            batch_adv_images = adv_images[start_id:end_id].clone().detach().to(device)
+    numbers = [2, 4, 6, 8, 10]
+    for i in numbers:
+        adv_images = torch.load('results/adv_images_eps_{}'.format(i))['adv_images']
+        for epoch in range(epoch):
+            print('Training on adversarial examples with epsilon = {}/255'.format(i))
+            print('Epoch: {}'.format(epoch))
+            for batch_idx, inputs in enumerate(train_loader):
+                # print('Batch: %d Generating adversarial examples...' % batch_idx)
+                # adv_images = pgd_attacker.pgd_attack(**inputs)
+                
+                start_id = batch_idx * BATCH_SIZE
+                end_id = (batch_idx + 1) * BATCH_SIZE
+                batch_adv_images = adv_images[start_id:end_id].clone().detach().to(device)
 
-            optimizer.zero_grad()
-            images = inputs['image'].clone().detach().to(device)
-            labels = inputs['label'].clone().detach().to(device)
-            output = model(images)
-            adv_output = model(batch_adv_images)
+                optimizer.zero_grad()
+                images = inputs['image'].clone().detach().to(device)
+                labels = inputs['label'].clone().detach().to(device)
+                output = model(images)
+                adv_output = model(batch_adv_images)
 
-            loss = criterion(adv_output, labels) + criterion(output, labels)
+                loss = criterion(adv_output, labels) + criterion(output, labels)
 
-            loss.backward()
-            optimizer.step()
-
-    # if batch_idx % 10 == 0:
-    print('Train Epoch: {} \tLoss: {:.6f}'.format(epoch, loss.item()))
+                loss.backward()
+                optimizer.step()
+            print('Epoch: {} \tLoss: {:.6f}'.format(epoch, loss.item()))
 
 def compute_accuracy(model, adv_images, labels):
     model.eval()
@@ -128,12 +129,12 @@ def compute_accuracy(model, adv_images, labels):
 
 if test_mode:
     print("Running test mode...")
-    loaded_data = torch.load('results/adv_images_eps_6-255')
+    loaded_data = torch.load('results/adv_images')
     adv_images = loaded_data['adv_images']
     labels = loaded_data['labels']
     model.load_state_dict(torch.load('fine-tuned-ResNet50.pth'))
     accuracy = compute_accuracy(model, adv_images, labels)
     print("Test accuracy: {:.2f}%".format(accuracy * 100))
 else:
-    adversarial_train(model, dset_loader, optimizer, criterion, attacker, EPOCH)
+    adversarial_train(model, dset_loader, optimizer, criterion, EPOCH)
     torch.save(model.state_dict(), 'fine-tuned-ResNet50.pth')
